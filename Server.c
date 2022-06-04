@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> //atof함수
 #include <string.h>
 #include <winsock2.h> //Socket 사용
 #include <time.h> //Timer 구현
@@ -126,13 +126,17 @@ DWORD WINAPI DataCheck(LPVOID arg) {
 	printf("THREAD > running new thread.\n");
 	// ----- START : 연결된 client에 대해서 서비스 제공 부분...
 	flag = 1;
-	int rcvSum, rcvTotal, ret, result;
-	char opndCnt, msg[MAX_PACKET_SIZE];
+	double rcvMsgReal;
+	char* rcvMsgChar;
+	char msg[MAX_PACKET_SIZE];
 
 	while (flag) {
 		printf("THREAD >  요청대기\n");
-		recv(hClntSock, &opndCnt, sizeof(opndCnt), 0);
-		printf("THREAD> 피연산자 수 = %d.\n", opndCnt);
+		recv(hClntSock, &msg, sizeof(MAX_PACKET_SIZE), 0);
+		rcvMsgChar = msg;
+		rcvMsgReal = atof(rcvMsgChar); //문자열 -> 실수 
+		printf("THREAD> 받은 값 = %0.1f\n", rcvMsgReal);
+		flag = 0;
 		printf("THREAD> close socket with client.\n");
 		closesocket(hClntSock);
 	}
