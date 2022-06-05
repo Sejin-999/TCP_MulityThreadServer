@@ -121,24 +121,48 @@ void ErrorHandling(const char* msg) {
 DWORD WINAPI DataCheck(LPVOID arg) {
 	SOCKET hClntSock;
 	hClntSock = (SOCKET)arg;
-	int flag;
+	int flag,ctlFlag;
 
 	printf("THREAD > running new thread.\n");
 	// ----- START : 연결된 client에 대해서 서비스 제공 부분...
 	flag = 1;
+	
+
 	double rcvMsgReal;
 	char* rcvMsgChar;
 	char msg[MAX_PACKET_SIZE];
 
 	while (flag) {
+		ctlFlag = 1;
 		printf("THREAD >  요청대기\n");
 		recv(hClntSock, &msg, sizeof(MAX_PACKET_SIZE), 0);
 		rcvMsgChar = msg;
 		rcvMsgReal = atof(rcvMsgChar); //문자열 -> 실수 
-		printf("THREAD> 받은 값 = %0.1f\n", rcvMsgReal);
-		flag = 0;
-		printf("THREAD> close socket with client.\n");
-		closesocket(hClntSock);
+
+		if (rcvMsgReal < 0) {
+			printf("<ERROR> recv 오류 OR Client 오류 \n");
+			flag = 0;
+			break;
+		}
+		else {
+			ctlFlag = CheckRcv(rcvMsgReal);
+			char sendA[10];
+			sprintf(sendA,"%d",ctlFlag);
+			printf("THREAD > 받은 값 = %0.1f  :: %d :: %s\n", rcvMsgReal,ctlFlag,sendA);
+			send(hClntSock, sendA, sizeof(10), 0);
+		}
 	}
+	printf("THREAD> close socket with client.\n");
+	closesocket(hClntSock);
 	// ----- END : 연결된 client에 대해서 서비스 제공 부분...
+}
+
+int CheckRcv(double rcv) {
+	if (rcv < 8) {
+		return 1;
+	}
+	else {
+		printf("________DANGER 위험수치_______\n");
+		return 0;
+	}
 }
