@@ -4,10 +4,12 @@
 #include <winsock2.h>
 #include <stdlib.h> // rand()함수
 #include <time.h> // time()함수
-
+#include <Windows.h> // sleep
 
 void ErrorHandling(char* message);
 double RandomNum();
+void timerS();
+void randChFun(char* msg);
 #define MAX_PACKET_SIZE  120
 
 int main(int argc, char* argv[])
@@ -45,64 +47,54 @@ int main(int argc, char* argv[])
 
 	char msg[MAX_PACKET_SIZE];
 	int flag;
+	int firstFlag=1;
 	flag = 1;
 	while (flag) {
-		//Timer Setting start
-		struct tm* t;
-		time_t base = time(NULL);
-		t = localtime(&base);
-		printf("%d년 %d월 %d일 %d시 %d분 %d초\n", t->tm_year + 1900, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
-		//timer Setting End
 
-		//Random Number start
-		double rcvRand=0;
-		rcvRand = RandomNum();
-		printf("%f",rcvRand);
-		sprintf(msg,"%f",rcvRand);
-		//Random Number End
-		printf("%s\n",msg);
-		send(hSocket, msg, sizeof(MAX_PACKET_SIZE), 0);
-		flag = 0;
-	}
-	
-
-
-		/*
-	{
-		// 1. 사용자 연산 자료 입력....(피연산자 수, 피연산자, 연산자)		
-		printf("Client: 피연산자 수 입력: ");
-		scanf("%d", &opndCnt);
-		msg[0] = (char)opndCnt;
-		for (int i = 0; i < opndCnt; i++) {
-			printf("- %d 번째 피연산자 입력: ", i + 1);
-			scanf("%d", &msg[1 + i * sizeof(int)]);
+		if (firstFlag == 1) {
+			//printf("1회용");
+			randChFun(msg);
+			send(hSocket, msg, sizeof(MAX_PACKET_SIZE), 0);
+			firstFlag = 0; //최초실행후 반복문으로 실행된다.
+			Sleep(2000);
 		}
-		rewind(stdin);
-		printf("> 연산자를 입력하세요: ");
-		scanf("%c", &msg[1 + opndCnt * sizeof(int)]);
-		send(hSocket, msg, 2 + opndCnt * sizeof(int), 0);
 
-		// 2. 결과 수신 및 출력		
-		rcvSum = 0; // 수신 누적치.
-		rcvTotal = sizeof(result); // 수신 목표치.
-		while (rcvSum < rcvTotal) {
-			ret = recv(hSocket, &msg[rcvSum], rcvTotal - rcvSum, 0);
-			if (ret <= 0) {
-				printf("<ERROR> recv 오류.\n");
-				flag = 0;
-				break;
+		else {
+			int rcvflag;
+			char* fm;
+			recv(hSocket, &msg, sizeof(MAX_PACKET_SIZE), 0);
+			printf("%s", msg);
+			fm = msg;
+			rcvflag = atof(fm);
+
+			//printf("^^^^^%d^^^^^", rcvflag);//제대로 변환되었는지 확인
+
+			if (rcvflag <= 0) {
+				printf("ERROR 위험 수치\n");
+				int selectError;
+				printf("감지된 센서의 값이 위험수치를 도달하였습니다. 계속: 1 || 종료: 0 || 그외값 입력 : 관리자와 채팅\n");
+				scanf("%d", &selectError);
+				if (selectError == 0) {
+					flag = 0;
+				}
+				else if (selectError == 1) {
+					randChFun(msg);
+					send(hSocket, msg, sizeof(MAX_PACKET_SIZE), 0);
+					Sleep(2000);
+				}
+				else {
+					flag = 0; //채팅 연결
+				}
 			}
 			else {
-				rcvSum = rcvSum + ret;
-				printf("Client> recv %d bytes. sum=%d, total=%d\n", ret, rcvSum, rcvTotal);
+				randChFun(msg);
+				send(hSocket, msg, sizeof(MAX_PACKET_SIZE), 0);
+				Sleep(2000);
 			}
 		}
-		if (flag == 1) {
-			result = *((int*)msg);
-			printf("Client> 서버로부터 수신된 결과 = %d\n", result);
-		}
+
+
 	}
-	*/
 	closesocket(hSocket);
 	printf("Client> close socket...\n");
 	WSACleanup();
@@ -133,4 +125,23 @@ double RandomNum() {
 	printf("%0.1f\n", sumRandom);
 
 	return sumRandom;
+}
+
+void timerS() {
+	//Timer Setting start
+	struct tm* t;
+	time_t base = time(NULL);
+	t = localtime(&base);
+	printf("%d년 %d월 %d일 %d시 %d분 %d초\n", t->tm_year + 1900, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
+	//timer Setting End
+}
+
+void randChFun(char *msg) {
+	timerS();
+	//Random Number start
+	double rcvRand = 0;
+	rcvRand = RandomNum();
+	printf("%f", rcvRand);
+	sprintf(msg, "%f", rcvRand);
+	//Random Number End
 }
